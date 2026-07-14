@@ -14,8 +14,14 @@
 
   <!-- INTRO SEQUENCE -->
   <div id="intro" aria-hidden="true">
-    <div id="intro-line" class="intro-line"></div>
-    <div id="intro-cursor" class="intro-cursor" aria-hidden="true">|</div>
+    <div class="cube-wrap">
+      <div class="cube" id="cube">
+        <div class="cube-face" style="--i:0"><span class="stmt">Stop asking Reddit.<span class="cursor"></span></span></div>
+        <div class="cube-face" style="--i:1"><span class="stmt">Google can&rsquo;t answer this.<span class="cursor"></span></span></div>
+        <div class="cube-face" style="--i:2"><span class="stmt">Your Korean friend<br>doesn&rsquo;t know.<span class="cursor"></span></span></div>
+        <div class="cube-face" id="face3" style="--i:3"></div>
+      </div>
+    </div>
     <button id="intro-skip" type="button">skip</button>
   </div>
 
@@ -28,7 +34,7 @@
 
     <!-- HERO -->
     <section class="hero" id="hero">
-      <h1 class="hero-headline">You just found it.<br><span class="accent">Kore ///</span></h1>
+      <h1 class="hero-headline">The real<br><span class="accent">Kore ///</span></h1>
       <p class="hero-sub">Housing. Friends. Community. Events. The real Korea — not the PDF, not the group chat that died in March.</p>
 
       <form id="signup-form" class="signup-form" autocomplete="off">
@@ -78,6 +84,16 @@
           <h3>Everyday life</h3>
           <p>The stuff nobody puts in a PDF. Now it's in one place.</p>
         </div>
+      </div>
+    </section>
+
+    <!-- BATCHES -->
+    <section class="batches" id="batches">
+      <div class="batches-box">
+        <span class="section-label">// first batch</span>
+        <h2 class="batches-headline">The higher you rank on the waitlist, the earlier you get in.</h2>
+        <p class="batches-sub">First batch members receive unlimited invite codes.</p>
+        <a href="#hero" class="batches-cta">Claim my spot</a>
       </div>
     </section>
 

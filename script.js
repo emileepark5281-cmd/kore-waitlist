@@ -4,34 +4,29 @@
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKOPX3RM59UO2M-5m-ug_x-MZ3IHpqN68LcH8Q8ILuWL7efvHQ-SPWj1ByNUO2Cf0-/exec";
 
 /* ====== INTRO SEQUENCE ======
-   White screen, huge black text, nothing else. Each line holds 2s then
-   fades. Last line gets an extra pause. Then a beat of blank white,
-   a blinking cursor, "Okay.", then the reveal line. */
-const INTRO_LINES = [
-  "Stop asking Reddit.",
-  "Google can't answer this one.",
-  "Facebook Groups are just ads.",
-  "Instagram is all vibes.",
-  "TikTok sold the dream.",
-  "Forgot the instructions."
-];
-
+   Full-screen white/black cube: each of the first 3 faces holds one
+   statement, revealed by rotating the cube 90deg. The 4th face starts
+   blank (cursor only), then fades in the closing line. A simulated
+   backspace + crossfade morphs "Kore" into the KORE wordmark before the
+   site reveals. */
 (function runIntro() {
   const introEl = document.getElementById("intro");
-  const lineEl = document.getElementById("intro-line");
-  const cursorEl = document.getElementById("intro-cursor");
+  const cubeEl = document.getElementById("cube");
+  const face3 = document.getElementById("face3");
   const skipBtn = document.getElementById("intro-skip");
   const siteEl = document.getElementById("site");
 
   const alreadySeen = sessionStorage.getItem("kore_intro_seen");
 
-  const DISPLAY_MS = 2000;
-  const FADE_MS = 450;
-  const LAST_LINE_PAUSE_MS = 900;
-  const BLANK_MS = 2000;
-  const CURSOR_BLINK_MS = 1400;
-  const OKAY_HOLD_MS = 900;
-  const FINAL_HOLD_MS = 1300;
+  const ROTATE_HOLD_MS = 1600;   // statement stays put before rotating
+  const ROTATE_MS = 900;         // cube rotation transition itself
+  const ANTICIPATION_MS = 1000;  // blank face, cursor-only
+  const FINAL_LINE_HOLD_MS = 2000;
+  const CURSOR_MOVE_PAUSE_MS = 400;
+  const BACKSPACE_PAUSE_MS = 500;
+  const BLINK_ONCE_MS = 700;
+  const MORPH_MS = 750;
+  const POST_MORPH_HOLD_MS = 700;
 
   let stopped = false;
   const sleep = (ms) => new Promise((resolve) => {
@@ -46,38 +41,70 @@ const INTRO_LINES = [
     document.body.style.overflow = "";
   }
 
-  async function showLine(html, holdMs) {
+  async function rotateTo(step) {
     if (stopped) return;
-    lineEl.innerHTML = html;
-    lineEl.classList.remove("show");
-    void lineEl.offsetWidth; // restart transition
-    lineEl.classList.add("show");
-    await sleep(holdMs);
-    lineEl.classList.remove("show");
-    await sleep(FADE_MS);
+    cubeEl.style.transform = `rotateX(${-90 * step}deg)`;
+    await sleep(ROTATE_MS);
   }
 
   async function play() {
-    for (let i = 0; i < INTRO_LINES.length; i++) {
-      const isLast = i === INTRO_LINES.length - 1;
-      await showLine(INTRO_LINES[i], isLast ? DISPLAY_MS + LAST_LINE_PAUSE_MS : DISPLAY_MS);
-      if (stopped) return;
-    }
-
-    // blank beat
-    await sleep(BLANK_MS);
+    // Faces 0-2 already hold their statements (static HTML). Hold on
+    // face 0, then rotate through 1 and 2.
+    await sleep(ROTATE_HOLD_MS);
+    if (stopped) return;
+    await rotateTo(1);
+    await sleep(ROTATE_HOLD_MS);
+    if (stopped) return;
+    await rotateTo(2);
+    await sleep(ROTATE_HOLD_MS);
     if (stopped) return;
 
-    // blinking cursor
-    cursorEl.classList.add("show");
-    await sleep(CURSOR_BLINK_MS);
-    cursorEl.classList.remove("show");
+    // face3 starts blank: just the cursor, blinking alone.
+    face3.innerHTML = '<span class="cursor"></span>';
+    await rotateTo(3);
+    await sleep(ANTICIPATION_MS);
     if (stopped) return;
 
-    await showLine("Okay.", OKAY_HOLD_MS);
+    // Fade in the closing line within the same face.
+    face3.innerHTML = '<span class="stmt" id="finalStmt" style="opacity:0">You just found<br>the real <span id="wordKore">Kore</span><span id="tailA">a</span><span class="cursor" id="finalCursor"></span></span>';
+    const finalStmt = document.getElementById("finalStmt");
+    finalStmt.style.transition = "opacity 0.7s ease";
+    void finalStmt.offsetWidth;
+    finalStmt.style.opacity = "1";
+    await sleep(700 + FINAL_LINE_HOLD_MS);
     if (stopped) return;
 
-    await showLine('Here\'s <span class="accent">KORE</span>..', FINAL_HOLD_MS);
+    // Move cursor left, in front of the trailing "a".
+    const finalCursor = document.getElementById("finalCursor");
+    const tailA = document.getElementById("tailA");
+    tailA.parentNode.insertBefore(finalCursor, tailA);
+    await sleep(CURSOR_MOVE_PAUSE_MS);
+    if (stopped) return;
+
+    // Backspace: delete the "a".
+    tailA.remove();
+    await sleep(BACKSPACE_PAUSE_MS);
+    if (stopped) return;
+
+    // One more blink before the morph.
+    await sleep(BLINK_ONCE_MS);
+    if (stopped) return;
+
+    // Crossfade "Kore" into the KORE wordmark, fade out "the real ".
+    const finalStmtEl = document.getElementById("finalStmt");
+    finalStmtEl.innerHTML = 'You just found<br>the real <span class="brand-wrap"><span class="brand-old">Kore</span><span class="brand-new">KORE ///</span></span>';
+    finalStmtEl.appendChild(finalCursor); // keep the same cursor node so it can fade out instead of vanishing
+    const brandOld = finalStmtEl.querySelector(".brand-old");
+    const brandNew = finalStmtEl.querySelector(".brand-new");
+    finalCursor.style.transition = "opacity 0.4s ease";
+    void finalStmtEl.offsetWidth;
+    brandOld.style.opacity = "0";
+    brandNew.style.opacity = "1";
+    finalCursor.style.opacity = "0";
+    await sleep(MORPH_MS);
+    if (stopped) return;
+
+    await sleep(POST_MORPH_HOLD_MS);
     reveal();
   }
 
