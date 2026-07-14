@@ -1,8 +1,13 @@
 /*
   Kore waitlist backend.
   Paste this into Extensions > Apps Script on your Google Sheet, then deploy
-  as a Web App (see README.md). The sheet must have a tab named "Signups"
-  with header row: Timestamp | Email | Code | ReferredBy
+  as a Web App (see README.md). The sheet must have a tab named "Signups".
+  Columns (auto-created/migrated): Timestamp | Email | Code | ReferredBy | Position
+
+  Queue model: position is a persisted integer, not recomputed from a
+  global sort. New signups join at the back of the line. Each successful
+  referral swaps the referrer with whoever is directly one spot ahead of
+  them — one bump per referral, not a jump to the top.
 */
 
 const SHEET_NAME = "Signups";
@@ -11,7 +16,19 @@ const CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no 0/O/1/I/l to avoid c
 function getSheet_() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["Timestamp", "Email", "Code", "ReferredBy"]);
+    sheet.appendRow(["Timestamp", "Email", "Code", "ReferredBy", "Position"]);
+    return sheet;
+  }
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  if (headers.indexOf("Position") === -1) {
+    const posCol = headers.length + 1;
+    sheet.getRange(1, posCol).setValue("Position");
+    const lastRow = sheet.getLastRow();
+    if (lastRow >= 2) {
+      const positions = [];
+      for (let i = 2; i <= lastRow; i++) positions.push([i - 1]);
+      sheet.getRange(2, posCol, positions.length, 1).setValues(positions);
+    }
   }
   return sheet;
 }
@@ -19,8 +36,15 @@ function getSheet_() {
 function getAllRows_(sheet) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  return sheet.getRange(2, 1, lastRow - 1, 4).getValues()
-    .map(r => ({ timestamp: r[0], email: String(r[1]).toLowerCase(), code: r[2], referredBy: r[3] }));
+  return sheet.getRange(2, 1, lastRow - 1, 5).getValues()
+    .map((r, i) => ({
+      rowIndex: i + 2,
+      timestamp: r[0],
+      email: String(r[1]).toLowerCase(),
+      code: r[2],
+      referredBy: r[3],
+      position: r[4]
+    }));
 }
 
 function generateCode_(existingCodes) {
@@ -34,24 +58,8 @@ function generateCode_(existingCodes) {
   return code;
 }
 
-function computeStanding_(rows, targetEmail) {
-  const referralCounts = {};
-  rows.forEach(r => {
-    if (r.referredBy) referralCounts[r.referredBy] = (referralCounts[r.referredBy] || 0) + 1;
-  });
-
-  const ranked = rows.slice().sort((a, b) => {
-    const countDiff = (referralCounts[b.code] || 0) - (referralCounts[a.code] || 0);
-    if (countDiff !== 0) return countDiff;
-    return new Date(a.timestamp) - new Date(b.timestamp);
-  });
-
-  const idx = ranked.findIndex(r => r.email === targetEmail.toLowerCase());
-  const target = rows.find(r => r.email === targetEmail.toLowerCase());
-  return {
-    position: idx + 1,
-    referralCount: referralCounts[target.code] || 0
-  };
+function referralCountFor_(rows, code) {
+  return rows.filter(r => r.referredBy === code).length;
 }
 
 function jsonOut_(obj) {
@@ -76,8 +84,7 @@ function doPost(e) {
 
     const existing = rows.find(r => r.email === email);
     if (existing) {
-      const standing = computeStanding_(rows, email);
-      return jsonOut_({ ok: true, email, code: existing.code, position: standing.position, referralCount: standing.referralCount });
+      return jsonOut_({ ok: true, email, code: existing.code, position: existing.position, referralCount: referralCountFor_(rows, existing.code) });
     }
 
     const existingCodes = rows.map(r => r.code);
@@ -85,12 +92,21 @@ function doPost(e) {
 
     const code = generateCode_(existingCodes);
     const timestamp = new Date();
-    sheet.appendRow([timestamp, email, code, referredBy]);
+    const position = rows.length + 1;
+    sheet.appendRow([timestamp, email, code, referredBy, position]);
 
-    const updatedRows = rows.concat([{ timestamp, email, code, referredBy }]);
-    const standing = computeStanding_(updatedRows, email);
+    if (referredBy) {
+      const referrer = rows.find(r => r.code === referredBy);
+      if (referrer && referrer.position > 1) {
+        const ahead = rows.find(r => r.position === referrer.position - 1);
+        if (ahead) {
+          sheet.getRange(referrer.rowIndex, 5).setValue(referrer.position - 1);
+          sheet.getRange(ahead.rowIndex, 5).setValue(ahead.position + 1);
+        }
+      }
+    }
 
-    return jsonOut_({ ok: true, email, code, position: standing.position, referralCount: standing.referralCount });
+    return jsonOut_({ ok: true, email, code, position, referralCount: 0 });
   } catch (err) {
     return jsonOut_({ ok: false, error: String(err) });
   } finally {
@@ -99,14 +115,19 @@ function doPost(e) {
 }
 
 function doGet(e) {
-  const code = String((e.parameter && e.parameter.code) || "").trim().toUpperCase();
-  if (!code) return jsonOut_({ ok: false, error: "Missing code" });
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const code = String((e.parameter && e.parameter.code) || "").trim().toUpperCase();
+    if (!code) return jsonOut_({ ok: false, error: "Missing code" });
 
-  const sheet = getSheet_();
-  const rows = getAllRows_(sheet);
-  const target = rows.find(r => r.code === code);
-  if (!target) return jsonOut_({ ok: false, error: "Code not found" });
+    const sheet = getSheet_();
+    const rows = getAllRows_(sheet);
+    const target = rows.find(r => r.code === code);
+    if (!target) return jsonOut_({ ok: false, error: "Code not found" });
 
-  const standing = computeStanding_(rows, target.email);
-  return jsonOut_({ ok: true, email: target.email, code: target.code, position: standing.position, referralCount: standing.referralCount });
+    return jsonOut_({ ok: true, email: target.email, code: target.code, position: target.position, referralCount: referralCountFor_(rows, target.code) });
+  } finally {
+    lock.releaseLock();
+  }
 }

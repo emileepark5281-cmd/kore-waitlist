@@ -47,8 +47,8 @@ Aim for photos that look like someone's actual camera roll — casual, real, a l
 ## How referral ranking works
 
 - Everyone gets a unique 6-character referral code the moment they sign up, and a shareable link: `yoursite.com/?ref=THEIRCODE`.
-- When someone signs up through that link, it's recorded against the referrer.
-- Position in line = ranked by (most referrals first, then earliest signup as tiebreaker). More referrals moves you up; there's no cap.
+- New signups join at the back of the line — their position is stored permanently in the `Position` column (not recalculated from scratch each time).
+- Each time someone signs up through your link, you swap places with whoever is directly one spot ahead of you. One referral = one bump up, not a jump to the top. If you're #12 and a friend joins through your link, you become #11; a second friend gets you to #10, and so on.
 - "Batches" (releasing access to the top N people at a time) isn't built as an automated feature yet — when you're ready to launch, open the Sheet, sort by position, and invite people in chunks yourself. If you want this automated later (e.g. auto-emailing batches), that's a straightforward next step — just ask.
 
 ## Editing text / colors later
