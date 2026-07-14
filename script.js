@@ -1,7 +1,7 @@
 /* ====== CONFIG ======
    Paste your deployed Google Apps Script Web App URL here.
    See README.md for how to get this. */
-const APPS_SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzsfGqucAiY4oH1YY8XhyZ5RunchWmhPoEM6gS4UKCGB0w2gIcVzpfdaw0V0FG3To9O/exec";
 
 /* ====== INTRO SEQUENCE ======
    White screen, huge black text, nothing else. Each line holds 2s then
@@ -137,6 +137,8 @@ async function submitSignup(email) {
   return data; // { ok, code, position, referralCount }
 }
 
+let freshSignupShown = false;
+
 function showConfirmation(data) {
   const confirmation = document.getElementById("confirmation");
   const positionEl = document.getElementById("position-number");
@@ -178,6 +180,7 @@ function wireForm(formId, inputId, buttonId) {
     button.textContent = "Joining...";
     try {
       const data = await submitSignup(email);
+      freshSignupShown = true;
       showConfirmation(data);
     } catch (err) {
       button.textContent = "Try again";
@@ -199,7 +202,7 @@ wireForm("signup-form-2", "email-input-2", "signup-btn-2");
   fetch(APPS_SCRIPT_URL + "?code=" + encodeURIComponent(savedCode))
     .then(res => res.json())
     .then(data => {
-      if (data.ok) showConfirmation(data);
+      if (data.ok && !freshSignupShown) showConfirmation(data);
     })
     .catch(() => {});
 })();
