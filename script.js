@@ -1,7 +1,7 @@
 /* ====== CONFIG ======
    Paste your deployed Google Apps Script Web App URL here.
    See README.md for how to get this. */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzsfGqucAiY4oH1YY8XhyZ5RunchWmhPoEM6gS4UKCGB0w2gIcVzpfdaw0V0FG3To9O/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKOPX3RM59UO2M-5m-ug_x-MZ3IHpqN68LcH8Q8ILuWL7efvHQ-SPWj1ByNUO2Cf0-/exec";
 
 /* ====== INTRO SEQUENCE ======
    White screen, huge black text, nothing else. Each line holds 2s then
