@@ -139,6 +139,26 @@ async function submitSignup(email) {
 
 let freshSignupShown = false;
 
+function wireCopyButton() {
+  const copyBtn = document.getElementById("copy-btn");
+  const referralLinkEl = document.getElementById("referral-link");
+  if (!copyBtn || copyBtn.dataset.wired) return;
+  copyBtn.dataset.wired = "1";
+
+  copyBtn.addEventListener("click", async () => {
+    const text = referralLinkEl.value;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (err) {
+      referralLinkEl.select();
+      document.execCommand("copy");
+    }
+    const original = copyBtn.textContent;
+    copyBtn.textContent = "Copied!";
+    setTimeout(() => { copyBtn.textContent = original; }, 1800);
+  });
+}
+
 function showConfirmation(data) {
   const confirmation = document.getElementById("confirmation");
   const positionEl = document.getElementById("position-number");
@@ -155,6 +175,7 @@ function showConfirmation(data) {
   form.hidden = true;
   formNote.hidden = true;
   confirmation.hidden = false;
+  wireCopyButton();
 
   localStorage.setItem("kore_referral_code", data.code);
   localStorage.setItem("kore_email", data.email || "");
