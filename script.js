@@ -6,9 +6,9 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKOPX3RM59UO2M
 /* ====== INTRO SEQUENCE ======
    Full-screen white/black cube: each of the first 3 faces holds one
    statement, revealed by rotating the cube 90deg. The 4th face starts
-   blank (cursor only), then fades in the closing line. A simulated
-   backspace + crossfade morphs "Kore" into the KORE wordmark before the
-   site reveals. */
+   blank (cursor only), then fast-typewrites "You just found", clears,
+   and types "the real Korea" (Korea in blue from the first keystroke).
+   A simulated backspace erases the trailing "a" before the site reveals. */
 (function runIntro() {
   const introEl = document.getElementById("intro");
   const cubeEl = document.getElementById("cube");
@@ -21,18 +21,26 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKOPX3RM59UO2M
   const ROTATE_HOLD_MS = 1600;   // statement stays put before rotating
   const ROTATE_MS = 900;         // cube rotation transition itself
   const ANTICIPATION_MS = 1000;  // blank face, cursor-only
-  const FINAL_LINE_HOLD_MS = 2000;
-  const CURSOR_MOVE_PAUSE_MS = 400;
-  const BACKSPACE_PAUSE_MS = 500;
-  const BLINK_ONCE_MS = 700;
-  const MORPH_MS = 750;
-  const POST_MORPH_HOLD_MS = 700;
+  const TYPE_CHAR_MS = 32;       // per-character typing speed, fast-paced
+  const LINE_ONE_HOLD_MS = 550;
+  const LINE_SWAP_FADE_MS = 220;
+  const LINE_TWO_HOLD_MS = 900;
+  const CURSOR_MOVE_PAUSE_MS = 350;
+  const BACKSPACE_PAUSE_MS = 450;
+  const POST_BACKSPACE_HOLD_MS = 650;
 
   let stopped = false;
   const sleep = (ms) => new Promise((resolve) => {
     const id = setTimeout(resolve, ms);
     if (stopped) { clearTimeout(id); resolve(); }
   });
+
+  async function typeInto(el, text) {
+    for (let i = 0; i < text.length && !stopped; i++) {
+      el.textContent += text[i];
+      await sleep(TYPE_CHAR_MS);
+    }
+  }
 
   function reveal() {
     introEl.classList.add("hide");
@@ -60,51 +68,53 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKOPX3RM59UO2M
     if (stopped) return;
 
     // face3 starts blank: just the cursor, blinking alone.
-    face3.innerHTML = '<span class="cursor"></span>';
+    face3.innerHTML = '<span class="stmt" id="finalStmt"><span id="typeTarget"></span><span class="cursor" id="finalCursor"></span></span>';
     await rotateTo(3);
     await sleep(ANTICIPATION_MS);
     if (stopped) return;
 
-    // Fade in the closing line within the same face.
-    face3.innerHTML = '<span class="stmt" id="finalStmt" style="opacity:0">You just found<br>the real <span id="wordKore">Kore</span><span id="tailA">a</span><span class="cursor" id="finalCursor"></span></span>';
     const finalStmt = document.getElementById("finalStmt");
-    finalStmt.style.transition = "opacity 0.7s ease";
-    void finalStmt.offsetWidth;
+    const typeTarget = document.getElementById("typeTarget");
+    finalStmt.style.transition = `opacity ${LINE_SWAP_FADE_MS}ms ease`;
+
+    // Line 1: fast-typed, then cleared (never shown together with line 2).
+    await typeInto(typeTarget, "You just found");
+    if (stopped) return;
+    await sleep(LINE_ONE_HOLD_MS);
+    if (stopped) return;
+    finalStmt.style.opacity = "0";
+    await sleep(LINE_SWAP_FADE_MS);
+    if (stopped) return;
+    typeTarget.textContent = "";
     finalStmt.style.opacity = "1";
-    await sleep(700 + FINAL_LINE_HOLD_MS);
+
+    // Line 2: "the real " in black, "Korea" typed straight into blue.
+    typeTarget.innerHTML = '<span id="preBlack"></span><span id="preBlue" style="color:var(--blue)"></span>';
+    const preBlack = document.getElementById("preBlack");
+    const preBlue = document.getElementById("preBlue");
+    await typeInto(preBlack, "the real ");
+    if (stopped) return;
+    await typeInto(preBlue, "Korea");
+    if (stopped) return;
+    await sleep(LINE_TWO_HOLD_MS);
     if (stopped) return;
 
-    // Move cursor left, in front of the trailing "a".
+    // Restructure "Korea" so the trailing "a" can be targeted and erased.
+    preBlue.innerHTML = 'Kore<span id="tailA">a</span>';
     const finalCursor = document.getElementById("finalCursor");
     const tailA = document.getElementById("tailA");
+
+    // Move cursor left, in front of the trailing "a".
     tailA.parentNode.insertBefore(finalCursor, tailA);
     await sleep(CURSOR_MOVE_PAUSE_MS);
     if (stopped) return;
 
-    // Backspace: delete the "a".
+    // Backspace: delete the "a". "Korea" is now "Kore", still blue.
     tailA.remove();
     await sleep(BACKSPACE_PAUSE_MS);
     if (stopped) return;
 
-    // One more blink before the morph.
-    await sleep(BLINK_ONCE_MS);
-    if (stopped) return;
-
-    // Crossfade "Kore" into the KORE wordmark, fade out "the real ".
-    const finalStmtEl = document.getElementById("finalStmt");
-    finalStmtEl.innerHTML = 'You just found<br>the real <span class="brand-wrap"><span class="brand-old">Kore</span><span class="brand-new">KORE ///</span></span>';
-    finalStmtEl.appendChild(finalCursor); // keep the same cursor node so it can fade out instead of vanishing
-    const brandOld = finalStmtEl.querySelector(".brand-old");
-    const brandNew = finalStmtEl.querySelector(".brand-new");
-    finalCursor.style.transition = "opacity 0.4s ease";
-    void finalStmtEl.offsetWidth;
-    brandOld.style.opacity = "0";
-    brandNew.style.opacity = "1";
-    finalCursor.style.opacity = "0";
-    await sleep(MORPH_MS);
-    if (stopped) return;
-
-    await sleep(POST_MORPH_HOLD_MS);
+    await sleep(POST_BACKSPACE_HOLD_MS);
     reveal();
   }
 
