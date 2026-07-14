@@ -1,14 +1,8 @@
-/*
-  Kore waitlist backend.
-  Paste this into Extensions > Apps Script on your Google Sheet, then deploy
-  as a Web App (see README.md). The sheet must have a tab named "Signups".
-  Columns (auto-created/migrated): Timestamp | Email | Code | ReferredBy | Position
-
-  Queue model: position is a persisted integer, not recomputed from a
-  global sort. New signups join at the back of the line. Each successful
-  referral swaps the referrer with whoever is directly one spot ahead of
-  them — one bump per referral, not a jump to the top.
-*/
+// Kore waitlist backend.
+// Sheet tab "Signups" columns (auto-created): Timestamp, Email, Code, ReferredBy, Position
+// Queue model: position is a persisted integer. New signups join at the back
+// of the line. Each successful referral swaps the referrer with whoever is
+// directly one spot ahead of them - one bump per referral, not a jump to the top.
 
 const SHEET_NAME = "Signups";
 const CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no 0/O/1/I/l to avoid confusion
