@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kore — You just found it.</title>
+<meta name="description" content="The inside track on living in Korea — housing, friends, community, events. Not the PDF. Not the group chat that died in March.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- INTRO SEQUENCE -->
+  <div id="intro" aria-hidden="true">
+    <div id="intro-line" class="intro-line"></div>
+    <button id="intro-skip" type="button">skip</button>
+  </div>
+
+  <!-- MAIN SITE -->
+  <main id="site">
+
+    <nav class="topnav">
+      <span class="wordmark">KORE</span>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero" id="hero">
+      <h1 class="hero-headline">You just found it.<br><span class="accent">Kore ///</span></h1>
+      <p class="hero-sub">Housing. Friends. Community. Events. The real Korea — not the PDF, not the group chat that died in March.</p>
+
+      <form id="signup-form" class="signup-form" autocomplete="off">
+        <input type="email" id="email-input" name="email" placeholder="your@email.com" required>
+        <button type="submit" id="signup-btn">Claim your spot</button>
+      </form>
+      <p class="form-note" id="form-note">No invite. No entry. Yet.</p>
+
+      <!-- Shown after successful signup -->
+      <div id="confirmation" class="confirmation" hidden>
+        <p class="confirmation-position">You're <span id="position-number">#—</span> in line.</p>
+        <p class="confirmation-copy">Send it to the group chat. Every friend who joins bumps you up.</p>
+        <div class="referral-box">
+          <input type="text" id="referral-link" readonly>
+          <button type="button" id="copy-btn">Copy link</button>
+        </div>
+        <p class="referral-count"><span id="referral-count-number">0</span> friends joined through you</p>
+      </div>
+    </section>
+
+    <!-- WHAT IS KORE -->
+    <section class="what" id="what">
+      <h2 class="section-label">// what is kore</h2>
+      <div class="what-grid">
+        <div class="what-item">
+          <span class="what-index">01</span>
+          <h3>Housing</h3>
+          <p>Find a place without gambling on a Facebook group full of ads.</p>
+        </div>
+        <div class="what-item">
+          <span class="what-index">02</span>
+          <h3>Friendships</h3>
+          <p>Meet people who actually get what it's like to land here with nobody.</p>
+        </div>
+        <div class="what-item">
+          <span class="what-index">03</span>
+          <h3>Community</h3>
+          <p>Real communities, not a group chat that died three months ago.</p>
+        </div>
+        <div class="what-item">
+          <span class="what-index">04</span>
+          <h3>Events</h3>
+          <p>Find out what's happening before it's already over.</p>
+        </div>
+        <div class="what-item">
+          <span class="what-index">05</span>
+          <h3>Everyday life</h3>
+          <p>The stuff nobody puts in a PDF. Now it's in one place.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PHOTO STRIP -->
+    <section class="gallery" id="gallery" aria-hidden="true">
+      <div class="photo ph-1"></div>
+      <div class="photo ph-2"></div>
+      <div class="photo ph-3"></div>
+      <div class="photo ph-4"></div>
+    </section>
+
+    <!-- CLOSING -->
+    <section class="closing" id="closing">
+      <h2 class="closing-headline">No invite.<br>No entry.</h2>
+      <p class="closing-sub">Claim yours before launch.</p>
+      <form id="signup-form-2" class="signup-form" autocomplete="off">
+        <input type="email" id="email-input-2" name="email" placeholder="your@email.com" required>
+        <button type="submit" id="signup-btn-2">Claim your spot</button>
+      </form>
+    </section>
+
+    <footer class="footer">
+      <span class="wordmark small">KORE</span>
+      <span class="footer-note">&copy; 2026 Kore. All rights reserved.</span>
+    </footer>
+
+  </main>
+
+<script src="script.js"></script>
+</body>
+</html>
