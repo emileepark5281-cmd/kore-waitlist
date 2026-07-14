@@ -3,28 +3,41 @@
    See README.md for how to get this. */
 const APPS_SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 
-/* ====== INTRO SEQUENCE ====== */
+/* ====== INTRO SEQUENCE ======
+   White screen, huge black text, nothing else. Each line holds 2s then
+   fades. Last line gets an extra pause. Then a beat of blank white,
+   a blinking cursor, "Okay.", then the reveal line. */
 const INTRO_LINES = [
   "Stop asking Reddit.",
   "Google can't answer this one.",
-  "Facebook groups are just ads.",
-  "Your Korean friend doesn't know.",
+  "Facebook Groups are just ads.",
   "Instagram is all vibes.",
   "TikTok sold the dream.",
-  "Forgot the instructions.",
-  "You just found it.",
-  '<span class="accent">Kore ///</span>'
+  "Forgot the instructions."
 ];
 
 (function runIntro() {
   const introEl = document.getElementById("intro");
   const lineEl = document.getElementById("intro-line");
+  const cursorEl = document.getElementById("intro-cursor");
   const skipBtn = document.getElementById("intro-skip");
   const siteEl = document.getElementById("site");
 
   const alreadySeen = sessionStorage.getItem("kore_intro_seen");
-  const LINE_MS = 900;
-  const PAUSE_MS = 1300;
+
+  const DISPLAY_MS = 2000;
+  const FADE_MS = 450;
+  const LAST_LINE_PAUSE_MS = 900;
+  const BLANK_MS = 2000;
+  const CURSOR_BLINK_MS = 1400;
+  const OKAY_HOLD_MS = 900;
+  const FINAL_HOLD_MS = 1300;
+
+  let stopped = false;
+  const sleep = (ms) => new Promise((resolve) => {
+    const id = setTimeout(resolve, ms);
+    if (stopped) { clearTimeout(id); resolve(); }
+  });
 
   function reveal() {
     introEl.classList.add("hide");
@@ -33,38 +46,57 @@ const INTRO_LINES = [
     document.body.style.overflow = "";
   }
 
+  async function showLine(html, holdMs) {
+    if (stopped) return;
+    lineEl.innerHTML = html;
+    lineEl.classList.remove("show");
+    void lineEl.offsetWidth; // restart transition
+    lineEl.classList.add("show");
+    await sleep(holdMs);
+    lineEl.classList.remove("show");
+    await sleep(FADE_MS);
+  }
+
+  async function play() {
+    for (let i = 0; i < INTRO_LINES.length; i++) {
+      const isLast = i === INTRO_LINES.length - 1;
+      await showLine(INTRO_LINES[i], isLast ? DISPLAY_MS + LAST_LINE_PAUSE_MS : DISPLAY_MS);
+      if (stopped) return;
+    }
+
+    // blank beat
+    await sleep(BLANK_MS);
+    if (stopped) return;
+
+    // blinking cursor
+    cursorEl.classList.add("show");
+    await sleep(CURSOR_BLINK_MS);
+    cursorEl.classList.remove("show");
+    if (stopped) return;
+
+    await showLine("Okay.", OKAY_HOLD_MS);
+    if (stopped) return;
+
+    await showLine('Here\'s <span class="accent">KORE</span>..', FINAL_HOLD_MS);
+    reveal();
+  }
+
+  function skip() {
+    if (stopped) return;
+    stopped = true;
+    reveal();
+  }
+
   if (alreadySeen) {
     reveal();
     return;
   }
 
   document.body.style.overflow = "hidden";
-  let i = 0;
-  let stopped = false;
-
-  function showNext() {
-    if (stopped) return;
-    if (i >= INTRO_LINES.length) {
-      setTimeout(reveal, PAUSE_MS);
-      return;
-    }
-    lineEl.innerHTML = INTRO_LINES[i];
-    lineEl.classList.remove("show");
-    void lineEl.offsetWidth; // restart animation
-    lineEl.classList.add("show");
-    i++;
-    setTimeout(showNext, LINE_MS);
-  }
-
-  function skip() {
-    stopped = true;
-    reveal();
-  }
-
   skipBtn.addEventListener("click", (e) => { e.stopPropagation(); skip(); });
   introEl.addEventListener("click", skip);
 
-  showNext();
+  play();
 })();
 
 /* ====== SCROLL REVEAL ====== */

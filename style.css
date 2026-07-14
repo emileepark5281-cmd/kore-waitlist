@@ -27,8 +27,8 @@ img { max-width: 100%; display: block; }
 #intro {
   position: fixed;
   inset: 0;
-  background: var(--black);
-  color: var(--off-white);
+  background: #ffffff;
+  color: var(--black);
   z-index: 999;
   display: flex;
   align-items: center;
@@ -63,13 +63,29 @@ img { max-width: 100%; display: block; }
 
 .intro-line .accent { color: var(--blue); }
 
+.intro-cursor {
+  position: absolute;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 6vw, 4.2rem);
+  color: var(--black);
+  opacity: 0;
+  animation: cursor-blink 1s steps(1) infinite;
+}
+
+.intro-cursor.show { opacity: 1; }
+
+@keyframes cursor-blink {
+  0%, 49% { visibility: visible; }
+  50%, 100% { visibility: hidden; }
+}
+
 #intro-skip {
   position: fixed;
   bottom: 2rem;
   right: 2rem;
   background: none;
-  border: 1px solid var(--line-on-black);
-  color: var(--off-white);
+  border: 1px solid var(--line);
+  color: var(--black);
   font-family: var(--font-body);
   font-size: 0.75rem;
   letter-spacing: 0.08em;
@@ -77,7 +93,7 @@ img { max-width: 100%; display: block; }
   padding: 0.6rem 1.1rem;
   border-radius: 999px;
   cursor: pointer;
-  opacity: 0.6;
+  opacity: 0.5;
   transition: opacity 0.2s ease;
 }
 
